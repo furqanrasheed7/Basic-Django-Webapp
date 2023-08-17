@@ -13,6 +13,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from todo.serializers import UserSerializer
+from .forms import UserContentForm
+from .models import CustomUser
+
 
 User = get_user_model()
 
@@ -27,7 +30,7 @@ class RegisterAPIView(APIView):
             return Response({'message': 'Please provide username, email, and password.'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            user = User.objects.create_user(username=username, email=email, password=password, is_staff=True)
+            user = CustomUser.objects.create_user(username=username, email=email, password=password, is_staff=True)
         except IntegrityError:
             return Response({'message': 'Username or email already exists.'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -126,3 +129,15 @@ class ChangePasswordView(APIView):
         user.save()
 
         return Response({'message': 'Password changed successfully.'}, status=status.HTTP_200_OK)
+    
+def user_content_view(request):
+    if request.method == 'POST':
+        form = UserContentForm(request.POST, request.FILES)
+        if form.is_valid():
+            user_content = form.save(commit=False)
+            user_content.user = CustomUser.objects.get(pk=request.user.pk)
+            user_content.save()
+            return redirect('content_success')  # Redirect to a success page
+    else:
+        form = UserContentForm()
+    return render(request, 'user_content.html', {'form': form})

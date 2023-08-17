@@ -11,17 +11,19 @@ class UserSerializer(serializers.ModelSerializer):
         model = CustomUser
         fields = "__all__"
 
-    def to_representation(self, instance):
-        if isinstance(instance, (list, QuerySet)):
-            return super().to_representation(instance, many=True)
-        return super().to_representation(instance)
-
     def create(self, validated_data):
-        # Set the default value of is_staff to True
-        validated_data['is_staff'] = True
-
+        # Remove the is_staff value from validated_data to avoid conflicts
+        is_staff = validated_data.pop('is_staff', True)
+        
         # Call the create method of the parent class
-        return super().create(validated_data)
+        user = super().create(validated_data)
+        
+        # Set is_staff for the created user
+        user.is_staff = is_staff
+        user.save()
+        
+        return user
+
 
 
 class PasswordResetSerializer(serializers.Serializer):
